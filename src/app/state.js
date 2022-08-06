@@ -38,12 +38,11 @@ export const createState = () => ({
 
    hasPoint() {
       const isPreviousOperandPoint =
-         state.current.operator == '' &&
-         state.current.previousOperand.includes('.');
+         this.current.operator == '' &&
+         this.current.previousOperand.includes('.');
 
       const isNextOperandPoint =
-         state.current.nextOperand.includes('.') &&
-         state.current.operator !== '';
+         this.current.operator !== '' && this.current.nextOperand.includes('.');
 
       return isPreviousOperandPoint || isNextOperandPoint;
    },
