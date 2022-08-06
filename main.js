@@ -11,9 +11,16 @@ const AVILABLE_THEME = {
    third: 'theme-toxic',
 };
 
+const AVILABLE_OPERANDS = {
+   addition: '+',
+   subtraction: '-',
+   multiplication: 'x',
+   division: '/',
+};
+
 const state = {
    current: {
-      previouseOperand: '',
+      previousOperand: '',
       nextOperand: '',
       operator: '',
       theme: AVILABLE_THEME.first,
@@ -34,38 +41,65 @@ const state = {
       this.changed();
    },
 
-   setPreviouseOperand(operand) {
-      this.current.previouseOperand += operand;
+   setOperand(operand) {
+      if (operand === '.' && this.hasPoint()) {
+         return;
+      }
+      if (this.current.operator === '') {
+         this.current.previousOperand += operand;
+      }
+      if (this.current.operator !== '') {
+         this.current.nextOperand += operand;
+      }
       this.changed();
    },
 
-   setNextOperand(operand) {
-      this.current.nextOperand += operand;
-      this.changed();
+   hasPoint() {
+      const isPreviousOperandPoint =
+         state.current.operator == '' &&
+         state.current.previousOperand.includes('.');
+
+      const isNextOperandPoint =
+         state.current.nextOperand.includes('.') &&
+         state.current.operator !== '';
+
+      return isPreviousOperandPoint || isNextOperandPoint;
    },
 
    setOperator(operator) {
-      this.current.operator = operator;
+      this.setSecondOperator();
+
+      if (this.current.previousOperand !== '') {
+         this.current.operator = operator;
+      }
+      this.changed();
+   },
+
+   setSecondOperator() {
+      if (this.current.nextOperand !== '') {
+         this.equalResult();
+         this.cleanOperands();
+      }
       this.changed();
    },
 
    equalResult() {
       switch (this.current.operator) {
-         case '+':
-            this.current.previouseOperand =
-               +this.current.previouseOperand + +this.current.nextOperand;
+         case AVILABLE_OPERANDS.addition:
+            this.current.previousOperand =
+               +this.current.previousOperand + +this.current.nextOperand;
             break;
-         case '-':
-            this.current.previouseOperand =
-               this.current.previouseOperand - this.current.nextOperand;
+         case AVILABLE_OPERANDS.subtraction:
+            this.current.previousOperand =
+               this.current.previousOperand - this.current.nextOperand;
             break;
-         case 'x':
-            this.current.previouseOperand =
-               this.current.previouseOperand * this.current.nextOperand;
+         case AVILABLE_OPERANDS.multiplication:
+            this.current.previousOperand =
+               this.current.previousOperand * this.current.nextOperand;
             break;
-         case '/':
-            this.current.previouseOperand =
-               this.current.previouseOperand / this.current.nextOperand;
+         case AVILABLE_OPERANDS.division:
+            this.current.previousOperand =
+               this.current.previousOperand / this.current.nextOperand;
             break;
          default:
             return;
@@ -78,8 +112,8 @@ const state = {
          this.current.nextOperand = this.current.nextOperand.slice(0, -1);
       } else if (this.current.operator !== '') {
          this.current.operator = this.current.operator.slice(0, -1);
-      } else if (this.current.previouseOperand !== '') {
-         this.current.previouseOperand = this.current.previouseOperand
+      } else if (this.current.previousOperand !== '') {
+         this.current.previousOperand = this.current.previousOperand
             .toString()
             .slice(0, -1);
       }
@@ -93,7 +127,7 @@ const state = {
    },
 
    cleanAll() {
-      this.current.previouseOperand = '';
+      this.current.previousOperand = '';
       this.cleanOperands();
    },
 };
@@ -105,69 +139,17 @@ state.onChange(renderResult);
 
 $choiceSwitch.addEventListener('click', (event) => {
    if (event.target.hasAttribute('data-theme')) {
-      document.body.classList.remove(state.current.theme);
       state.setCurrentTheme(event.target.getAttribute('data-theme'));
-      document.body.classList.add(state.current.theme);
    }
 });
 
 $smallButtons.addEventListener('click', (event) => {
-   // Set Point Once
-
-   if (
-      event.target.getAttribute('data-number') === '.' &&
-      state.current.previouseOperand.includes('.') &&
-      state.current.operator === ''
-   )
-      return;
-
-   if (
-      event.target.getAttribute('data-number') === '.' &&
-      state.current.nextOperand.includes('.') &&
-      state.current.operator !== ''
-   )
-      return;
-
-   //
-
-   // Set Previouse Operand
-
-   if (
-      event.target.hasAttribute('data-number') &&
-      state.current.operator === ''
-   ) {
-      state.setPreviouseOperand(event.target.getAttribute('data-number'));
+   if (event.target.hasAttribute('data-number')) {
+      state.setOperand(event.target.getAttribute('data-number'));
    }
-   //
-
-   // Set Next Operand
-
-   if (
-      event.target.hasAttribute('data-number') &&
-      state.current.operator !== ''
-   ) {
-      state.setNextOperand(event.target.getAttribute('data-number'));
-   }
-   //
-
-   // Set Operator
-
-   if (
-      event.target.hasAttribute('data-operator') &&
-      state.current.nextOperand !== ''
-   ) {
-      state.equalResult();
-      state.cleanOperands();
-      state.setOperator(event.target.textContent);
-   }
-
-   if (
-      event.target.hasAttribute('data-operator') &&
-      state.current.previouseOperand !== ''
-   ) {
+   if (event.target.hasAttribute('data-operator')) {
       state.setOperator(event.target.getAttribute('data-operator'));
    }
-   //
 });
 
 $equal.addEventListener('click', () => {
@@ -175,34 +157,31 @@ $equal.addEventListener('click', () => {
    state.cleanOperands();
 });
 
-$reset.addEventListener('click', () => {
-   state.cleanAll();
-});
+$reset.addEventListener('click', () => state.cleanAll());
 
-$delete.addEventListener('click', () => {
-   state.sliceOneSign();
-});
+$delete.addEventListener('click', () => state.sliceOneSign());
 
 // Renderers
 
 function renderTheme(state) {
+   document.body.classList = state.current.theme;
    $choiceSwitch.innerHTML = `
-     <p class=" choice-first ${
-        state.current.theme === AVILABLE_THEME.first ? 'active-theme' : ''
-     }" data-theme="${AVILABLE_THEME.first}"></p>
-     <p class=" choice-second ${
-        state.current.theme === AVILABLE_THEME.second ? 'active-theme' : ''
-     }" data-theme="${AVILABLE_THEME.second}"></p>
-     <p class=" choice-third ${
-        state.current.theme === AVILABLE_THEME.third ? 'active-theme' : ''
-     }" data-theme="${AVILABLE_THEME.third}"></p>
-         `;
+        <p class=" choice-first ${
+           state.current.theme === AVILABLE_THEME.first ? 'active-theme' : ''
+        }" data-theme="${AVILABLE_THEME.first}"></p>
+        <p class=" choice-second ${
+           state.current.theme === AVILABLE_THEME.second ? 'active-theme' : ''
+        }" data-theme="${AVILABLE_THEME.second}"></p>
+        <p class=" choice-third ${
+           state.current.theme === AVILABLE_THEME.third ? 'active-theme' : ''
+        }" data-theme="${AVILABLE_THEME.third}"></p>
+            `;
 }
 
 function renderResult(state) {
    $result.innerHTML = `
    <div class="result-backdown">
-      <div data-previouse-number="first" class="result-numbers">${state.current.previouseOperand}</div>
+      <div data-previouse-number="first" class="result-numbers">${state.current.previousOperand}</div>
       <div data-operator="operator" class="result-numbers">${state.current.operator}</div>
       <div data-next-number="second"  class="result-numbers">${state.current.nextOperand}</div>
    </div>
