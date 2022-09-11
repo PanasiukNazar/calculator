@@ -38,6 +38,6 @@ jobs:
          - uses: actions/upload-artifact@v3
            with:
               name: github-pages
-              path: dist
+              path: ${{ github.workspace }}/dist
 
          - uses: actions/deploy-pages@v1
