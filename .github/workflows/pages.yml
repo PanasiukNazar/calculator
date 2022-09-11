@@ -21,6 +21,11 @@ jobs:
 
          - run: npm run build-production
 
+         - uses: actions/upload-artifact@v3
+           with:
+              name: github-pages
+              path: ${{ github.workspace }}/dist
+
    deploy:
       name: Deploy
       runs-on: ubuntu-latest
@@ -35,9 +40,4 @@ jobs:
          url: ${{ steps.deployment.outputs.page_url }}
 
       steps:
-         - uses: actions/upload-artifact@v3
-           with:
-              name: github-pages
-              path: ${{ github.workspace }}/dist
-
          - uses: actions/deploy-pages@v1
