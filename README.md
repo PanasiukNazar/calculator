@@ -1,1 +1,1 @@
-[Calculator app DEMO](https://panasiuknazar.github.io/calculator/)
+[DEMO](https://panasiuknazar.github.io/calculator/)
